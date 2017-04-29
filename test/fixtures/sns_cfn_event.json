@@ -1,0 +1,23 @@
+{
+  "Records": [
+    {
+      "EventVersion": "1.0",
+      "EventSubscriptionArn": "arn:aws:sns:us-east-1:018935564540:cf-notify-CFNotifyTopic-1F5UJTJFS9YBY:feb1d7ff-69d6-4830-95c7-5ab33942c15f",
+      "EventSource": "aws:sns",
+      "Sns": {
+        "SignatureVersion": "1",
+        "Timestamp": "2017-04-29T00:55:00.110Z",
+        "Signature": "YchdPzNRyCzA3KS28+jISKN175JT5+h9Dosn5s/80eBeQ/z0DWSTfN9BBFs8dNQ1f8Tpy825d8ESiSaK1iLncAZOG9ohi9EOpOeSVSmWnHbAmobB0TN/Cb7pZDx5Vt2KKfhFyEV4wlFhtOK6isJE4Hf4luCKBOeHsF0/w3RmcKknpPsq6jLX3pMCyOb+uyxeRQd/vKFEfe0nh9cg/RlW9L0sEAU4T65PqpTT3G3wXJnBjY8VQm9vjngld6Cvzf1s1M/l+AYhtu00zrh6D0yvyphU8y8uEVZgm35bdjJtFMM+rvcHwyGuSAn9hqNo41kRZ0Bj0iZmiMtu/gDJ/JB7UA==",
+        "SigningCertUrl": "https://sns.us-east-1.amazonaws.com/SimpleNotificationService-b95095beb82e8f6a046b3aafc7f4149a.pem",
+        "MessageId": "f03806a5-f0fc-56bc-9d0a-57d816587b35",
+        "Message": "StackId='arn:aws:cloudformation:us-east-1:018935564540:stack/users/1e0e5d80-2c3b-11e7-b0eb-503aca2616c5'\nTimestamp='2017-04-29T00:55:00.045Z'\nEventId='78b39e90-2c76-11e7-8168-500c288f18d1'\nLogicalResourceId='users'\nNamespace='018935564540'\nPhysicalResourceId='arn:aws:cloudformation:us-east-1:018935564540:stack/users/1e0e5d80-2c3b-11e7-b0eb-503aca2616c5'\nPrincipalId='AIDAJHWZLD55O7222DXUM'\nResourceProperties='null'\nResourceStatus='UPDATE_COMPLETE'\nResourceStatusReason=''\nResourceType='AWS::CloudFormation::Stack'\nStackName='users'\nClientRequestToken='null'\n",
+        "MessageAttributes": {
+        },
+        "Type": "Notification",
+        "UnsubscribeUrl": "https://sns.us-east-1.amazonaws.com/?Action=Unsubscribe&SubscriptionArn=arn:aws:sns:us-east-1:018935564540:cf-notify-CFNotifyTopic-1F5UJTJFS9YBY:feb1d7ff-69d6-4830-95c7-5ab33942c15f",
+        "TopicArn": "arn:aws:sns:us-east-1:018935564540:cf-notify-CFNotifyTopic-1F5UJTJFS9YBY",
+        "Subject": "AWS CloudFormation Notification"
+      }
+    }
+  ]
+}

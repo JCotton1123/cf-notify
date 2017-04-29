@@ -1,19 +1,20 @@
 # CF Notify
 
 ## What?
-An AWS Lambda function that will post Cloud Formation status updates to a Slack channel via a Slack Web Hook.
+An AWS Lambda function that will post Cloud Formation status updates to a Slack channel via a Slack Web Hook. Additionally it will notify you of stacks that do not have notifications enabled.
 
 
 ## Why?
 To give visibility of Cloud Formation changes to the whole team in a quick and simple manner. For example:
 
-![example Slack messages](./example.jpeg)
+![example Slack messages](./misc/example.jpeg)
 
 
 ## How?
 CF Notify has a stack of AWS resources consisting of:
  - An SNS Topic
- - A Lambda function, which uses the SNS Topic as an event source
+ - CloudWatch Rule
+ - A Lambda function, which uses the SNS Topic and CloudWatch Scheduled Event as event sources
  - An IAM Role to execute the Lambda function
 
 We add the SNS Topic of CF Notify to the notification ARNs of the Stack we want to monitor.
@@ -35,15 +36,17 @@ You can create an incoming webhook [here](https://my.slack.com/services/new/inco
 This is done using the script [deploy.sh](./deploy.sh).
 
 ```sh
-./deploy.sh $CHANNEL $WEBHOOK $AWS_PROFILE
+./deploy.sh $CHANNEL $WEBHOOK $BUCKET $TOPIC $AWS_PROFILE
 ```
 
 Where:
- - CHANNEL is the Slack channel or user to send messages to. It will be used in the naming of the Lambda artifact file stored in S3.
+ - CHANNEL is the Slack channel or user to send messages to.
  - WEBHOOK is the Web Hook URL of an Incoming Web Hook (see https://api.slack.com/incoming-webhooks).
- - AWS_PROFILE is the aws cli profile you want to use for deploy. Default profile is "default"
+ - BUCKET is the S3 bucket where the Lambda artifacts are deployed.
+ - TOPIC is the SNS topic name.
+ - AWS_PROFILE is the aws cli profile you want to use for deploy. The default profile is "default".
 
-`deploy.sh` will create a zip file and upload it to S3 and also create a cloud formation stack using the [template](./cf-notify.json).
+`deploy.sh` will create a zip file and upload it to S3 and also create a cloud formation stack using the [template](./cloudformation/cf-notify.json).
 
 ## Usage
 
