@@ -1,20 +1,24 @@
 #!/usr/bin/env bash
 
-test $(which pwgen)
-if [ $? != "0" ]; then
-    echo -e "pwgen not found. Please install using 'sudo apt-get install pwgen' (GNU/Linux) or 'brew install pwgen' (OSX)"
-    exit 1
-fi
-
 if [ $# -lt 1 ]
 then
-    echo "usage: $0 <CHANNEL> <WEBHOOK> <AWS_PROFILE>"
+    echo "usage: $0 <CHANNEL> <WEBHOOK> <BUCKET> [TOPIC] [PROFILE]"
     exit 1
 fi
 
 CHANNEL=$1
 WEBHOOK=$2
-PROFILE=$3
+BUCKET=$3
+TOPIC=${4:-"cf-notify"}
+PROFILE=${5:-"default"}
+
+RELEASE=$(date +%Y-%m-%d-%H%M)
+
+if [ -z $BUCKET ];
+then
+    echo "Please specify a bucket name";
+     exit 1
+fi
 
 if [ -z $CHANNEL ];
 then
@@ -28,10 +32,6 @@ then
     exit 1
 fi
 
-if [ -z $PROFILE ];
-then
-    PROFILE="default"
-fi
 
 if [[ $(aws configure --profile $PROFILE list) && $? -ne 0 ]];
 then
@@ -48,40 +48,36 @@ fi
 
 CHANNEL_NAME=`echo ${CHANNEL:1} | tr '[:upper:]' '[:lower:]'`
 
-echo 'Creating bucket'
-BUCKET="cf-notify-`pwgen -1 --no-capitalize 5`"
-echo $BUCKET
-aws s3 mb "s3://$BUCKET" --profile $PROFILE
+echo "Creating bucket $BUCKET"
+aws s3 mb "s3://$BUCKET" --profile $PROFILE || exit 1
 echo "Bucket $BUCKET created"
 
-
 echo 'Creating lambda zip artifact'
-
-if [ ! -f slack.py ]; then
-    cat > slack.py <<EOL
-    WEBHOOK='$WEBHOOK'
-    CHANNEL='$CHANNEL'
-    CUSTOM_CHANNELS={}
-EOL
-fi
-
-zip cf-notify.zip lambda_notify.py slack.py
+zip -j cf-notify.zip src/*
 echo 'Lambda artifact created'
 
-
 echo 'Moving lambda artifact to S3'
-aws s3 cp cf-notify.zip s3://$BUCKET/cf-notify.zip --profile $PROFILE
-
+aws s3 cp cf-notify.zip s3://$BUCKET/$RELEASE/cf-notify.zip --profile $PROFILE
 rm cf-notify.zip
 echo 'Lambda artifact moved'
 
+echo 'Deleting existing stack if it exists'
+aws cloudformation delete-stack --stack-name cf-notify || true
+aws cloudformation wait stack-delete-complete --stack-name cf-notify
+echo 'Stack deleted if it existed'
+
 echo 'Creating stack'
 aws cloudformation create-stack \
-    --template-body file://cf-notify.json \
+    --template-body file://cloudformation/cf-notify.json \
     --stack-name cf-notify \
     --capabilities CAPABILITY_IAM \
-    --parameters ParameterKey=Bucket,ParameterValue=$BUCKET \
-    --profile $PROFILE
+    --parameters ParameterKey=ArtifactBucket,ParameterValue=$BUCKET \
+      ParameterKey=Release,ParameterValue=$RELEASE \
+      ParameterKey=TopicName,ParameterValue=$TOPIC \
+      ParameterKey=SlackChannel,ParameterValue=$CHANNEL \
+      ParameterKey=SlackWebhook,ParameterValue=$WEBHOOK \
+    --profile $PROFILE \
+    --output text
 
 if [[ $? != 0 ]];
 then

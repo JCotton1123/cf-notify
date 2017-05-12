@@ -2,10 +2,26 @@
     "AWSTemplateFormatVersion": "2010-09-09",
     "Description": "cf notify stack",
     "Parameters": {
-        "Bucket": {
+        "Release": {
+            "Description": "The release/version of cf-notify",
+            "Type": "String"
+        },
+        "ArtifactBucket": {
             "Description": "S3 bucket to locate lambda function (cf-notify.zip)",
             "Type": "String"
-        }
+        },
+        "TopicName": {
+            "Description": "The SNS topic name used by cf-notify",
+            "Type": "String"
+        },
+        "SlackChannel": {
+             "Description": "The Slack channel that notifications are delivered to",
+             "Type": "String"
+        },
+        "SlackWebhook": {
+             "Description": "The Slack webhook used to handle Slack integration",
+             "Type": "String"
+         }
     },
     "Resources": {
         "CFNotifyRole": {
@@ -42,9 +58,17 @@
                                 {
                                     "Effect": "Allow",
                                     "Action": [
+                                        "cloudformation:DescribeStacks",
                                         "cloudformation:DescribeStackResources"
                                     ],
-                                    "Resource": "arn:aws:cloudformation:*:*:*/*/*"
+                                    "Resource": "*"
+                                },
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "iam:ListUsers"
+                                    ],
+                                    "Resource": "*"
                                 }
                             ]
                         }
@@ -60,7 +84,8 @@
                         "Endpoint": { "Fn::GetAtt": [ "CFNotifyFunction", "Arn" ] },
                         "Protocol": "lambda"
                     }
-                ]
+                ],
+                "TopicName": { "Ref": "TopicName" }
             }
         },
         "CFNotifyFunction": {
@@ -72,20 +97,47 @@
                     "Fn::GetAtt": [ "CFNotifyRole", "Arn" ]
                 },
                 "Code": {
-                    "S3Bucket": { "Ref": "Bucket" },
-                    "S3Key": "cf-notify.zip"
+                    "S3Bucket": { "Ref": "ArtifactBucket" },
+                    "S3Key": {"Fn::Join": ["/", [{ "Ref": "Release" }, "cf-notify.zip"]]}
                 },
                 "Runtime": "python2.7",
-                "Timeout": "30"
+                "Timeout": "30",
+                "Environment": {
+                    "Variables": {
+                        "CHANNEL": { "Ref": "SlackChannel" },
+                        "WEBHOOK": { "Ref": "SlackWebhook" }
+                    }
+                }
             }
         },
-        "CFNotifyInvokePermission": {
+        "CFNotifyScheduledRule": {
+            "Type": "AWS::Events::Rule",
+            "Properties": {
+                "Description": "CF Notify check stacks for notification config",
+                "ScheduleExpression": "rate(12 hours)",
+                "State": "ENABLED",
+                "Targets": [{
+                    "Arn": { "Fn::GetAtt": ["CFNotifyFunction", "Arn"] },
+                    "Id": { "Fn::Join": ["", ["CFNotifyFunction", { "Ref": "Release" }]]}
+                }]
+            }
+        },
+        "CFNotifySnsInvokePermission": {
             "Type": "AWS::Lambda::Permission",
             "Properties": {
                 "FunctionName" : { "Ref" : "CFNotifyFunction" },
                 "Action": "lambda:InvokeFunction",
                 "Principal": "sns.amazonaws.com",
                 "SourceArn": { "Ref": "CFNotifyTopic" }
+            }
+        },
+        "CFNotifyEventsInvokePermissions": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+                "FunctionName" : { "Ref" : "CFNotifyFunction" },
+                "Action": "lambda:InvokeFunction",
+                "Principal": "events.amazonaws.com",
+                "SourceArn": { "Fn::GetAtt": ["CFNotifyScheduledRule", "Arn"] }
             }
         }
     },
