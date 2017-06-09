@@ -62,8 +62,8 @@ rm cf-notify.zip
 echo 'Lambda artifact moved'
 
 echo 'Deleting existing stack if it exists'
-aws cloudformation delete-stack --stack-name cf-notify || true
-aws cloudformation wait stack-delete-complete --stack-name cf-notify
+aws cloudformation delete-stack --stack-name cf-notify --profile $PROFILE || true
+aws cloudformation wait stack-delete-complete --stack-name cf-notify --profile $PROFILE
 echo 'Stack deleted if it existed'
 
 echo 'Creating stack'
